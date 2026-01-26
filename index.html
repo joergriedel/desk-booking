@@ -3,45 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERGO Arbeitsplatzbuchung</title>
+    <title>ERGO Smart Office - Buchungen</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root { --ergo-blue: #005596; }
-        
-        body {
-            margin: 0;
-            padding: 0;
-            height: auto !important;
-            overflow: visible !important;
-            background-color: #ffffff;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .tab-btn {
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s ease;
-        }
-
-        .tab-active { 
-            border-bottom: 3px solid var(--ergo-blue); 
-            color: var(--ergo-blue) !important;
-            font-weight: 800;
-        }
-
-        #booking-panel {
-            display: none;
-            background: #f8fafc;
-            border-top: 1px solid #e2e8f0;
-            border-bottom: 4px solid var(--ergo-blue);
-            animation: slideDown 0.3s ease-out;
-        }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
+        body { margin: 0; padding: 0; height: auto !important; overflow: visible !important; background-color: #ffffff; -webkit-font-smoothing: antialiased; }
+        .tab-btn { border-bottom: 3px solid transparent; transition: all 0.2s ease; }
+        .tab-active { border-bottom: 3px solid var(--ergo-blue); color: var(--ergo-blue) !important; font-weight: 800; }
+        #booking-panel { display: none; background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 4px solid var(--ergo-blue); animation: slideDown 0.3s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .desk-card:active { transform: scale(0.98); }
     </style>
 </head>
@@ -56,9 +27,15 @@
                 <span class="text-[9px] opacity-70 uppercase">Düsseldorf HQ</span>
             </div>
         </div>
-        <div class="flex gap-3">
-            <i data-lucide="bell" class="w-4 h-4 opacity-70"></i>
-            <i data-lucide="settings" class="w-4 h-4 opacity-70"></i>
+        <button onclick="toggleMyBookings()" class="bg-white/10 hover:bg-white/20 px-3 py-1 rounded text-[10px] font-bold border border-white/30 flex items-center gap-2">
+            <i data-lucide="calendar"></i> Meine Buchungen (<span id="booking-count">0</span>)
+        </button>
+    </div>
+
+    <div id="my-bookings-section" class="hidden bg-gray-50 border-b p-4 animate-in fade-in duration-300">
+        <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Aktuelle Reservierungen</h2>
+        <div id="bookings-list" class="space-y-2 text-sm text-gray-600">
+            <p class="italic text-xs text-gray-400">Keine aktiven Buchungen vorhanden.</p>
         </div>
     </div>
 
@@ -74,82 +51,76 @@
             <button onclick="closePanel()" class="p-1 rounded-full bg-gray-200 text-gray-600"><i data-lucide="x" class="w-4 h-4"></i></button>
         </div>
         <div id="panel-content" class="mb-6 text-sm text-gray-700"></div>
-        <div class="flex gap-2">
-            <button class="flex-1 bg-[#005596] text-white py-3 rounded-xl font-bold text-sm shadow-md active:bg-blue-800">Bestätigen</button>
-            <button onclick="closePanel()" class="flex-1 bg-white border border-gray-300 py-3 rounded-xl font-bold text-sm text-gray-500">Abbrechen</button>
-        </div>
+        <div class="flex gap-2" id="panel-actions">
+            </div>
     </div>
 
-    <div id="main-content" class="p-4 space-y-8">
-        </div>
+    <div id="main-content" class="p-4 space-y-8"></div>
 </div>
 
 <script>
+    let currentFloor = 'eg';
+    let myBookings = [];
+
     const officeData = {
         eg: {
-            rooms: [{ name: "Konferenzraum Rhein", cap: "12 Personen", equip: ["Beamer", "Whiteboard", "Hybrid-System"] }],
-            desks: [{ id: "Desk 001", s: 2 }, { id: "Desk 002", s: 1 }, { id: "Desk 003", s: 2 }, { id: "Desk 004", s: 2 }]
+            rooms: [{ id: "R-EG-01", name: "Konferenzraum Rhein", cap: "12 Personen", equip: ["Beamer", "Whiteboard", "Hybrid-System"], booked: false }],
+            desks: [{ id: "Desk 001", s: 2, booked: false }, { id: "Desk 002", s: 1, booked: false }, { id: "Desk 003", s: 2, booked: false }]
         },
         og1: {
-            rooms: [{ name: "Meeting Düssel", cap: "6 Personen", equip: ["Monitor 55\"", "Webcam"] }],
-            desks: [{ id: "Desk 101", s: 2 }, { id: "Desk 102", s: 1 }, { id: "Desk 103", s: 1 }]
+            rooms: [{ id: "R-OG1-01", name: "Meeting Düssel", cap: "6 Personen", equip: ["Monitor 55\"", "Webcam"], booked: false }],
+            desks: [{ id: "Desk 101", s: 2, booked: false }, { id: "Desk 102", s: 1, booked: false }]
         },
         og2: {
-            rooms: [{ name: "Skyline Lounge", cap: "20 Personen", equip: ["Premium Ausstattung", "Dachterrasse"] }],
-            desks: [{ id: "Desk 201", s: 2 }, { id: "Desk 202", s: 2 }]
+            rooms: [{ id: "R-OG2-01", name: "Skyline Lounge", cap: "20 Personen", equip: ["Premium Ausstattung", "Dachterrasse"], booked: false }],
+            desks: [{ id: "Desk 201", s: 2, booked: false }]
         }
     };
 
     function switchTab(floor) {
+        currentFloor = floor;
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
         document.getElementById('tab-' + floor).classList.add('tab-active');
         closePanel();
+        renderMain();
+    }
 
+    function renderMain() {
         const content = document.getElementById('main-content');
-        const data = officeData[floor];
+        const data = officeData[currentFloor];
 
         content.innerHTML = `
-            <div class="animate-in fade-in duration-500">
-                <div class="flex justify-between items-center mb-4 px-1">
-                    <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Meeting-Räume</h2>
-                    <span class="text-[9px] text-gray-400 font-bold uppercase">${data.rooms.length} Verfügbar</span>
-                </div>
+            <div class="animate-in fade-in duration-300">
+                <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Meeting-Räume</h2>
                 <div class="grid gap-3">
                     ${data.rooms.map(r => `
-                        <div onclick="selectRoom('${r.name}', '${r.equip.join(', ')}')" class="bg-white border border-gray-100 rounded-2xl p-4 flex justify-between items-center shadow-sm cursor-pointer hover:border-[#005596] desk-card">
+                        <div onclick="selectRoom('${r.id}')" class="bg-white border ${r.booked ? 'bg-gray-50' : 'border-gray-100'} rounded-2xl p-4 flex justify-between items-center shadow-sm cursor-pointer hover:border-[#005596] desk-card">
                             <div class="flex items-center gap-3">
-                                <div class="bg-blue-50 p-2 rounded-xl text-[#005596]"><i data-lucide="video" class="w-5 h-5"></i></div>
+                                <div class="bg-blue-50 p-2 rounded-xl text-[#005596]"><i data-lucide="video"></i></div>
                                 <div>
-                                    <span class="block font-bold text-gray-800 text-sm">${r.name}</span>
+                                    <span class="block font-bold ${r.booked ? 'text-gray-400 line-through' : 'text-gray-800'} text-sm">${r.name}</span>
                                     <span class="text-[10px] text-gray-400">${r.cap}</span>
                                 </div>
                             </div>
-                            <span class="text-[9px] font-black text-green-600 bg-green-50 px-2 py-1 rounded-md text-center">FREI</span>
+                            <span class="text-[9px] font-black px-2 py-1 rounded-md ${r.booked ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-600'}">${r.booked ? 'BELEGT' : 'FREI'}</span>
                         </div>
                     `).join('')}
                 </div>
             </div>
 
-            <div class="animate-in fade-in duration-500">
-                <div class="flex justify-between items-center mb-4 px-1">
-                    <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Desks</h2>
-                    <div class="flex gap-3">
-                        <span class="flex items-center gap-1 text-[9px] font-bold text-gray-400"><span class="w-2 h-2 bg-green-500 rounded-full"></span> Frei</span>
-                        <span class="flex items-center gap-1 text-[9px] font-bold text-gray-400"><span class="w-2 h-2 bg-red-400 rounded-full"></span> Belegt</span>
-                    </div>
-                </div>
+            <div class="animate-in fade-in duration-300">
+                <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Desks</h2>
                 <div class="grid grid-cols-2 gap-3">
                     ${data.desks.map(d => `
-                        <div onclick="selectDesk('${d.id}', ${d.s})" class="bg-white border border-gray-100 rounded-2xl p-4 cursor-pointer hover:border-[#005596] shadow-sm desk-card">
+                        <div onclick="selectDesk('${d.id}')" class="bg-white border ${d.booked ? 'bg-gray-50 opacity-60' : 'border-gray-100'} rounded-2xl p-4 cursor-pointer hover:border-[#005596] shadow-sm desk-card">
                             <div class="flex justify-between items-center mb-3">
-                                <span class="text-xs font-bold text-gray-800">${d.id}</span>
-                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span class="text-xs font-bold ${d.booked ? 'text-gray-400' : 'text-gray-800'}">${d.id}</span>
+                                <div class="w-2 h-2 ${d.booked ? 'bg-red-500' : 'bg-green-500'} rounded-full"></div>
                             </div>
-                            <div class="flex gap-1.5 mb-1 items-center">
-                                ${Array(d.s).fill('<i data-lucide="monitor" class="w-4 h-4 text-[#005596]"></i>').join('')}
-                                <span class="text-[9px] font-black text-[#005596] ml-1">${d.s}x</span>
+                            <div class="flex gap-1.5 items-center">
+                                ${Array(d.s).fill(`<i data-lucide="monitor" class="w-4 h-4 ${d.booked ? 'text-gray-300' : 'text-[#005596]'}"></i>`).join('')}
+                                <span class="text-[9px] font-black text-gray-400 ml-1">${d.s}x</span>
                             </div>
-                            <p class="text-[8px] text-gray-400 uppercase font-black tracking-tighter">Bildschirm(e)</p>
                         </div>
                     `).join('')}
                 </div>
@@ -158,44 +129,107 @@
         lucide.createIcons();
     }
 
-    function selectRoom(name, equip) {
-        document.getElementById('panel-title').innerText = name;
+    function selectRoom(id) {
+        const room = officeData[currentFloor].rooms.find(r => r.id === id);
+        if (room.booked) return;
+        
+        document.getElementById('panel-title').innerText = room.name;
         document.getElementById('panel-content').innerHTML = `
-            <div class="space-y-3">
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ausstattung:</p>
-                <div class="grid grid-cols-1 gap-2">
-                    ${equip.split(', ').map(e => `<div class="flex items-center gap-2 text-sm text-gray-600 font-medium"><i data-lucide="check-circle-2" class="w-4 h-4 text-green-500"></i> ${e}</div>`).join('')}
-                </div>
-            </div>
+            <p class="text-[10px] font-black text-gray-400 uppercase mb-3">Ausstattung:</p>
+            <ul class="space-y-2">
+                ${room.equip.map(e => `<li class="flex items-center gap-2 text-xs text-gray-600"><i data-lucide="check-circle-2" class="w-4 h-4 text-green-500"></i> ${e}</li>`).join('')}
+            </ul>
+        `;
+        document.getElementById('panel-actions').innerHTML = `
+            <button onclick="confirmBooking('${room.id}', 'room')" class="flex-1 bg-[#005596] text-white py-3 rounded-xl font-bold text-sm shadow-md">Raum buchen</button>
+            <button onclick="closePanel()" class="flex-1 bg-white border border-gray-300 py-3 rounded-xl font-bold text-sm text-gray-500">Abbrechen</button>
         `;
         showPanel();
     }
 
-    function selectDesk(id, s) {
-        document.getElementById('panel-title').innerText = id;
+    function selectDesk(id) {
+        const desk = officeData[currentFloor].desks.find(d => d.id === id);
+        if (desk.booked) return;
+
+        document.getElementById('panel-title').innerText = desk.id;
         document.getElementById('panel-content').innerHTML = `
-            <p class="mb-4 text-gray-600">Möchten Sie diesen <strong>Desk</strong> mit <strong>${s} Monitor(en)</strong> reservieren? Wählen Sie einen Zeitraum:</p>
+            <p class="text-sm text-gray-600 mb-4">Wählen Sie einen Zeitraum für diesen Desk:</p>
             <div class="flex gap-2">
-                <button class="flex-1 border-2 border-[#005596] p-2 rounded-xl text-[9px] font-black text-[#005596] hover:bg-blue-50">GANZTAG</button>
-                <button class="flex-1 border border-gray-200 p-2 rounded-xl text-[9px] font-bold text-gray-400 hover:bg-gray-50">VORMITTAG</button>
-                <button class="flex-1 border border-gray-200 p-2 rounded-xl text-[9px] font-bold text-gray-400 hover:bg-gray-50">NACHMITTAG</button>
+                <button class="flex-1 border-2 border-[#005596] p-2 rounded-xl text-[9px] font-black text-[#005596]">GANZTAG</button>
+                <button class="flex-1 border border-gray-200 p-2 rounded-xl text-[9px] font-bold text-gray-400">VORMITTAG</button>
+                <button class="flex-1 border border-gray-200 p-2 rounded-xl text-[9px] font-bold text-gray-400">NACHMITTAG</button>
             </div>
+        `;
+        document.getElementById('panel-actions').innerHTML = `
+            <button onclick="confirmBooking('${desk.id}', 'desk')" class="flex-1 bg-[#005596] text-white py-3 rounded-xl font-bold text-sm shadow-md">Jetzt reservieren</button>
+            <button onclick="closePanel()" class="flex-1 bg-white border border-gray-300 py-3 rounded-xl font-bold text-sm text-gray-500">Abbrechen</button>
         `;
         showPanel();
     }
 
-    function showPanel() {
-        const p = document.getElementById('booking-panel');
-        p.style.display = 'block';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    function confirmBooking(id, type) {
+        let item;
+        if (type === 'room') {
+            item = officeData[currentFloor].rooms.find(r => r.id === id);
+        } else {
+            item = officeData[currentFloor].desks.find(d => d.id === id);
+        }
+        
+        item.booked = true;
+        myBookings.push({ ...item, floor: currentFloor, type: type });
+        
+        updateBookingUI();
+        closePanel();
+        renderMain();
+    }
+
+    function stopBooking(id) {
+        const bookingIdx = myBookings.findIndex(b => (b.id === id));
+        const booking = myBookings[bookingIdx];
+        
+        // Status im Datenmodell zurücksetzen
+        if (booking.type === 'room') {
+            officeData[booking.floor].rooms.find(r => r.id === id).booked = false;
+        } else {
+            officeData[booking.floor].desks.find(d => d.id === id).booked = false;
+        }
+        
+        myBookings.splice(bookingIdx, 1);
+        updateBookingUI();
+        renderMain();
+    }
+
+    function updateBookingUI() {
+        document.getElementById('booking-count').innerText = myBookings.length;
+        const list = document.getElementById('bookings-list');
+        
+        if (myBookings.length === 0) {
+            list.innerHTML = `<p class="italic text-xs text-gray-400">Keine aktiven Buchungen vorhanden.</p>`;
+            return;
+        }
+
+        list.innerHTML = myBookings.map(b => `
+            <div class="bg-white border border-gray-200 p-3 rounded-xl flex justify-between items-center">
+                <div>
+                    <span class="block font-bold text-ergo text-xs">${b.name || b.id}</span>
+                    <span class="text-[9px] text-gray-400 uppercase font-bold tracking-tighter">${b.floor.toUpperCase()} • Heute</span>
+                </div>
+                <button onclick="stopBooking('${b.id}')" class="text-[10px] font-bold text-red-500 hover:text-red-700 flex items-center gap-1">
+                    <i data-lucide="trash-2" class="w-3 h-3"></i> Stoppen
+                </button>
+            </div>
+        `).join('');
         lucide.createIcons();
     }
 
-    function closePanel() {
-        document.getElementById('booking-panel').style.display = 'none';
+    function toggleMyBookings() {
+        const section = document.getElementById('my-bookings-section');
+        section.classList.toggle('hidden');
     }
 
-    // Start
+    function showPanel() { document.getElementById('booking-panel').style.display = 'block'; lucide.createIcons(); }
+    function closePanel() { document.getElementById('booking-panel').style.display = 'none'; }
+
     switchTab('eg');
 </script>
 </body>
