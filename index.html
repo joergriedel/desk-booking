@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERGO Office Booking - Düsseldorf HQ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .office-map {
+            background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+            background-color: #f8fafc;
+        }
+        .desk { transition: all 0.2s ease; cursor: pointer; }
+        .desk:hover { transform: scale(1.1); filter: brightness(0.9); }
+        .modal-overlay { background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans h-screen flex flex-col">
+
+    <header class="bg-[#005596] text-white p-4 flex justify-between items-center shadow-lg">
+        <div class="flex items-center gap-2">
+            <i data-lucide="building-2"></i>
+            <h1 class="font-bold text-lg">ERGO HQ Düsseldorf</h1>
+        </div>
+        <div class="flex gap-4">
+            <i data-lucide="search" class="w-5 h-5"></i>
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <i data-lucide="settings" class="w-5 h-5"></i>
+        </div>
+    </header>
+
+    <nav class="bg-white border-b p-3 flex justify-center items-center gap-4">
+        <button class="p-1 border rounded"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+        <span class="font-medium text-gray-700">Erdgeschoss (Ground Floor)</span>
+        <button class="p-1 border rounded"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+    </nav>
+
+    <main class="flex-1 overflow-hidden relative office-map p-6">
+        
+        <div class="max-w-4xl mx-auto h-full border-2 border-dashed border-gray-300 rounded-xl relative bg-white shadow-inner">
+            
+            <div onclick="openRoomModal('Konferenzraum Rhein', '8 Personen', ['TV', 'Webcam', 'Whiteboard', 'Klimaanlage'])" 
+                 class="absolute top-10 left-10 w-48 h-32 bg-green-100 border-2 border-green-400 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-green-200">
+                <i data-lucide="users" class="text-green-600 mb-1"></i>
+                <span class="text-xs font-bold text-green-800">Raum RHEIN</span>
+                <span class="text-[10px] text-green-600">Verfügbar</span>
+            </div>
+
+            <div onclick="openRoomModal('Fokusraum Düssel', '2 Personen', ['Monitor', 'Schallschutz'])" 
+                 class="absolute top-10 right-10 w-32 h-32 bg-red-100 border-2 border-red-400 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-red-200">
+                <i data-lucide="mic" class="text-red-600 mb-1"></i>
+                <span class="text-xs font-bold text-red-800">Fokus DÜSSEL</span>
+                <span class="text-[10px] text-red-600">Besetzt</span>
+            </div>
+
+            <div class="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-4">
+                <div onclick="openBookingModal('Arbeitsplatz 101')" class="desk w-12 h-12 bg-yellow-400 rounded-md shadow-md flex items-center justify-center text-white font-bold">101</div>
+                <div onclick="openBookingModal('Arbeitsplatz 102')" class="desk w-12 h-12 bg-green-500 rounded-md shadow-md flex items-center justify-center text-white font-bold">102</div>
+                <div onclick="openBookingModal('Arbeitsplatz 103')" class="desk w-12 h-12 bg-green-500 rounded-md shadow-md flex items-center justify-center text-white font-bold">103</div>
+                <div onclick="openBookingModal('Arbeitsplatz 104')" class="desk w-12 h-12 bg-red-500 rounded-md shadow-md flex items-center justify-center text-white font-bold text-xs">BUSY</div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-white border-t p-2 flex justify-around text-gray-500 text-[10px]">
+        <div class="flex flex-col items-center text-[#005596]"><i data-lucide="map-pin"></i><span>Standorte</span></div>
+        <div class="flex flex-col items-center font-bold text-[#005596]"><i data-lucide="layers"></i><span>Stockwerk</span></div>
+        <div class="flex flex-col items-center"><i data-lucide="calendar"></i><span>Reservierungen</span></div>
+    </footer>
+
+    <div id="bookingModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div class="p-6 text-center">
+                <h3 id="deskTitle" class="text-lg font-bold mb-4">Diesen Arbeitsplatz reservieren</h3>
+                
+                <div class="grid grid-cols-3 gap-2 mb-6">
+                    <button class="bg-blue-600 text-white rounded-xl p-3 flex flex-col items-center">
+                        <span class="text-[10px] font-bold">TAG</span>
+                        <span class="text-[10px]">08:00-18:00</span>
+                    </button>
+                    <button class="bg-blue-500 text-white rounded-xl p-3 flex flex-col items-center opacity-80">
+                        <span class="text-[10px] font-bold">MORGENS</span>
+                        <span class="text-[10px]">08:00-14:00</span>
+                    </button>
+                    <button class="bg-blue-500 text-white rounded-xl p-3 flex flex-col items-center opacity-80">
+                        <span class="text-[10px] font-bold">NACHMITTAG</span>
+                        <span class="text-[10px]">14:00-18:00</span>
+                    </button>
+                </div>
+
+                <button class="text-blue-500 font-medium text-sm mb-4">Benutzerdefinierte Buchung</button>
+
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl mb-6">
+                    <span class="text-sm text-gray-600">Zum Kalender hinzufügen</span>
+                    <div class="w-10 h-5 bg-green-500 rounded-full relative">
+                        <div class="absolute right-1 top-1 bg-white w-3 h-3 rounded-full"></div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 mb-6">
+                    <hr class="flex-1 border-gray-200"> <span class="text-xs text-gray-400">OR</span> <hr class="flex-1 border-gray-200">
+                </div>
+
+                <button class="w-full bg-pink-50 text-pink-600 font-bold py-3 rounded-xl flex items-center justify-center gap-2 mb-4">
+                    <i data-lucide="zap" class="w-4 h-4 fill-pink-600"></i> Jetzt besetzen
+                </button>
+
+                <button onclick="closeModals()" class="text-gray-400 text-sm">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="roomModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl p-6">
+            <h3 id="roomName" class="text-xl font-bold text-[#005596]">Room Name</h3>
+            <p id="roomCapacity" class="text-gray-500 text-sm mb-4 italic"></p>
+            
+            <h4 class="font-bold text-gray-700 text-sm mb-2 uppercase tracking-wide">Ausstattung:</h4>
+            <ul id="equipmentList" class="space-y-2 mb-6">
+                </ul>
+
+            <button class="w-full bg-[#005596] text-white font-bold py-3 rounded-xl mb-3">Meeting buchen</button>
+            <button onclick="closeModals()" class="w-full text-gray-400 text-sm">Schließen</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        function openBookingModal(name) {
+            document.getElementById('deskTitle').innerText = name;
+            document.getElementById('bookingModal').classList.remove('hidden');
+        }
+
+        function openRoomModal(name, capacity, items) {
+            document.getElementById('roomName').innerText = name;
+            document.getElementById('roomCapacity').innerText = "Kapazität: " + capacity;
+            
+            const list = document.getElementById('equipmentList');
+            list.innerHTML = '';
+            items.forEach(item => {
+                list.innerHTML += `<li class="flex items-center gap-2 text-gray-700 text-sm">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-green-500"></i> ${item}
+                </li>`;
+            });
+            
+            document.getElementById('roomModal').classList.remove('hidden');
+            lucide.createIcons(); // Re-render check icons
+        }
+
+        function closeModals() {
+            document.getElementById('bookingModal').classList.add('hidden');
+            document.getElementById('roomModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
