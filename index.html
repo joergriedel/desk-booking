@@ -3,147 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ERGO Smart Office</title>
+    <title>ERGO HQ Düsseldorf</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root {
-            --ergo-blue: #005596;
-            --ergo-red: #C3002F;
+        :root { --ergo-blue: #005596; --ergo-red: #C3002F; }
+        
+        /* Force the app to stay within the viewport 100% */
+        html, body { 
+            height: 100vh; 
+            width: 100vw; 
+            margin: 0; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            background: #f8fafc;
         }
 
-        /* Prevent body scroll to keep the widget "app-like" */
-        body, html {
-            height: 100%;
-            margin: 0;
-            overflow: hidden;
+        /* The Map Area: Takes all remaining space */
+        .map-viewport {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            overflow: hidden; /* No double scrollbars */
+        }
+
+        /* The Floor Plan: Scalable aspect ratio */
+        .floor-plan {
+            width: 100%;
+            max-width: 900px;
+            aspect-ratio: 16 / 9; /* Maintains shape */
+            background: white;
+            border: 2px solid #1e293b;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-height: 100%; /* Prevents vertical cutoff */
+        }
+
+        .room-zone {
+            position: absolute;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+            cursor: pointer;
             display: flex;
             flex-direction: column;
-        }
-
-        /* Calculate exact height for the map area */
-        .map-container {
-            flex: 1;
-            overflow: auto; /* Allows panning if map is larger than screen */
-            background-color: #f1f5f9;
-            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
-            background-size: 20px 20px;
-            display: flex;
-            justify-content: center;
             align-items: center;
-            padding: 20px;
+            justify-content: center;
         }
+        .room-zone:hover { background-color: #f1f5f9; }
 
-        /* The actual floor plan drawing */
-        .blueprint {
-            position: relative;
-            background: white;
-            border: 4px solid #1e293b;
-            border-radius: 8px;
-            min-width: 800px; /* Fixed width to keep proportions */
-            height: 500px;    /* Fixed height to keep proportions */
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+        .desk {
+            width: 10%; /* Percentage based for scaling */
+            height: 12%;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
-        .wall-inner { position: absolute; background: #e2e8f0; }
-        .desk-btn { transition: transform 0.1s active; }
-        .desk-btn:active { transform: scale(0.9); }
     </style>
 </head>
-<body class="font-sans">
+<body>
 
-    <header class="bg-[#005596] text-white p-4 shadow-md shrink-0">
+    <header class="bg-[#005596] text-white p-3 shrink-0 shadow-md">
         <div class="flex justify-between items-center max-w-6xl mx-auto">
-            <div class="flex items-center gap-3">
-                <div class="bg-white text-[#005596] w-7 h-7 rounded flex items-center justify-center font-bold">E</div>
-                <div>
-                    <h1 class="text-sm font-bold leading-none">Smart Office</h1>
-                    <p class="text-[9px] opacity-70">DÜSSELDORF VICTORIA-PLATZ</p>
-                </div>
+            <div class="flex items-center gap-2">
+                <div class="bg-white text-[#005596] w-6 h-6 rounded flex items-center justify-center font-bold text-sm">E</div>
+                <h1 class="text-sm font-bold">Smart Office <span class="font-light opacity-70">| Düsseldorf</span></h1>
             </div>
-            <div class="flex gap-4">
-                <i data-lucide="bell" class="w-5 h-5"></i>
-                <i data-lucide="user" class="w-5 h-5"></i>
-            </div>
+            <i data-lucide="user" class="w-5 h-5"></i>
         </div>
     </header>
 
-    <nav class="bg-white border-b p-2 shrink-0">
-        <div class="flex justify-between items-center max-w-6xl mx-auto px-2">
-            <div class="flex bg-gray-100 p-1 rounded-lg gap-1">
-                <button class="px-3 py-1 text-xs font-bold bg-white rounded shadow-sm text-[#005596]">Erdgeschoss</button>
-                <button class="px-3 py-1 text-xs text-gray-500">1. OG</button>
-                <button class="px-3 py-1 text-xs text-gray-500">2. OG</button>
-            </div>
-            <div class="flex gap-3">
-                <div class="flex items-center gap-1 text-[10px]"><span class="w-2.5 h-2.5 bg-green-500 rounded-full"></span> Frei</div>
-                <div class="flex items-center gap-1 text-[10px]"><span class="w-2.5 h-2.5 bg-[#C3002F] rounded-full"></span> Belegt</div>
-            </div>
+    <nav class="bg-white border-b p-2 shrink-0 flex justify-between items-center px-4">
+        <div class="flex bg-gray-100 p-1 rounded-md text-[10px] font-bold">
+            <button class="bg-white px-3 py-1 rounded shadow-sm text-[#005596]">ERDGESCHOSS</button>
+            <button class="px-3 py-1 text-gray-400">1. OG</button>
+            <button class="px-3 py-1 text-gray-400">2. OG</button>
+        </div>
+        <div class="flex gap-2 text-[9px] font-bold">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 bg-green-500 rounded-full"></span> FREI</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 bg-[#C3002F] rounded-full"></span> BELEGT</span>
         </div>
     </nav>
 
-    <div class="map-container">
-        <div class="blueprint">
+    <div class="map-viewport">
+        <div class="floor-plan" id="map">
             
-            <div class="wall-inner h-full w-2 left-[30%]"></div>
-            <div class="wall-inner w-[30%] h-2 top-1/2"></div>
-
-            <div onclick="openRoom('Raum Rhein', '12 Pers.', ['Beamer', 'Webcam', 'Whiteboard'])"
-                 class="absolute top-0 left-0 w-[30%] h-[50%] border-r-2 border-b-2 border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50">
-                <span class="text-xs font-black text-slate-400">RAUM RHEIN</span>
-                <div class="mt-2 text-[9px] bg-green-100 text-green-700 px-2 py-0.5 rounded">VERFÜGBAR</div>
+            <div onclick="openRoom('Konferenzraum Rhein', '10 Pers.', ['TV', 'Webcam', 'Whiteboard'])" 
+                 class="room-zone top-0 left-0 w-[30%] h-[40%] rounded-tl-xl border-r-2 border-b-2">
+                <span class="text-[10px] font-black text-slate-400">RHEIN</span>
+                <div class="bg-green-100 text-green-700 text-[8px] px-1 rounded mt-1">FREI</div>
             </div>
 
-            <div onclick="openRoom('Raum Düssel', '4 Pers.', ['Monitor', 'Kaffee-Station'])"
-                 class="absolute bottom-0 left-0 w-[30%] h-[50%] border-r-2 border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50">
-                <span class="text-xs font-black text-slate-400">RAUM DÜSSEL</span>
-                <div class="mt-2 text-[9px] bg-red-100 text-red-700 px-2 py-0.5 rounded">BESETZT</div>
+            <div onclick="openRoom('Fokusraum Düssel', '2 Pers.', ['Monitor', 'Schallschutz'])" 
+                 class="room-zone bottom-0 left-0 w-[30%] h-[30%] rounded-bl-xl border-r-2 border-t-2">
+                <span class="text-[10px] font-black text-slate-400">DÜSSEL</span>
+                <div class="bg-red-100 text-[#C3002F] text-[8px] px-1 rounded mt-1">OCCUPIED</div>
             </div>
 
-            <div class="absolute left-[35%] top-[10%] right-[5%] bottom-[10%] grid grid-cols-4 gap-x-12 gap-y-8">
+            <div class="absolute left-[30.5%] top-0 bottom-0 w-8 bg-slate-50 border-r flex items-center justify-center">
+                <span class="rotate-90 text-[8px] font-bold text-slate-300 tracking-[0.5em]">FLUR / CORRIDOR</span>
+            </div>
+
+            <div class="absolute left-[40%] right-[5%] top-[10%] bottom-[10%] grid grid-cols-4 gap-4 items-center justify-items-center">
                 <script>
-                    const states = ['bg-green-500', 'bg-[#C3002F]', 'bg-green-500', 'bg-green-500', 'bg-green-500', 'bg-green-500', 'bg-[#C3002F]', 'bg-green-500', 'bg-green-500', 'bg-green-500', 'bg-green-500', 'bg-green-500'];
+                    const states = ['bg-green-500', 'bg-green-500', 'bg-[#C3002F]', 'bg-green-500', 'bg-green-500', 'bg-orange-400', 'bg-green-500', 'bg-green-500', 'bg-green-500', 'bg-[#C3002F]', 'bg-green-500', 'bg-green-500'];
                     states.forEach((color, i) => {
                         document.write(`
-                            <div class="flex flex-col items-center">
-                                <button onclick="openBooking('Platz ${300+i}')" class="desk-btn ${color} w-14 h-10 rounded-md shadow flex items-center justify-center text-white text-[10px] font-bold">
-                                    ${300+i}
-                                </button>
-                                <div class="w-6 h-1 bg-slate-200 rounded-b mt-0.5"></div>
+                            <div onclick="openBooking('Desk ${400+i}')" class="desk ${color} hover:scale-110 transition-transform">
+                                ${400+i}
                             </div>
                         `);
                     });
                 </script>
             </div>
-            
-            <div class="absolute bottom-4 right-6 text-[10px] text-slate-300 font-bold uppercase tracking-widest">
-                ERGO Düsseldorf Headquarters
-            </div>
+
         </div>
     </div>
 
-    <div id="modalOverlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div id="deskModal" class="hidden bg-white rounded-2xl w-full max-w-xs overflow-hidden shadow-2xl">
-            <div class="bg-[#005596] p-5 text-white">
-                <h3 id="deskTitle" class="font-bold">Platz auswählen</h3>
-            </div>
-            <div class="p-5 space-y-4">
-                <div class="grid grid-cols-3 gap-2">
-                    <button class="border-2 border-[#005596] rounded-lg p-2 text-center text-[#005596] font-bold text-[10px]">TAG</button>
-                    <button class="border border-gray-200 rounded-lg p-2 text-center text-gray-500 text-[10px]">AM</button>
-                    <button class="border border-gray-200 rounded-lg p-2 text-center text-gray-500 text-[10px]">PM</button>
+    <div id="modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+        <div class="bg-white rounded-2xl w-full max-w-xs shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div id="modalContent" class="p-6">
                 </div>
-                <button class="w-full bg-[#005596] text-white py-3 rounded-xl font-bold">Reservieren</button>
-                <button onclick="closeModal()" class="w-full text-gray-400 text-xs">Abbrechen</button>
+            <div class="p-4 border-t flex flex-col gap-2">
+                <button id="mainBtn" class="bg-[#005596] text-white py-3 rounded-xl font-bold text-sm">Bestätigen</button>
+                <button onclick="closeModal()" class="text-gray-400 text-xs py-2">Schließen</button>
             </div>
-        </div>
-
-        <div id="roomModal" class="hidden bg-white rounded-2xl w-full max-w-xs p-6 shadow-2xl">
-            <h3 id="roomTitle" class="text-lg font-bold text-[#005596]">Room</h3>
-            <p id="roomCap" class="text-xs text-gray-400 mb-4"></p>
-            <div class="space-y-2 mb-6" id="roomList"></div>
-            <button class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold">Meeting buchen</button>
-            <button onclick="closeModal()" class="w-full text-gray-400 text-xs mt-2">Schließen</button>
         </div>
     </div>
 
@@ -151,28 +144,33 @@
         lucide.createIcons();
 
         function openBooking(id) {
-            document.getElementById('deskTitle').innerText = id;
-            document.getElementById('modalOverlay').classList.remove('hidden');
-            document.getElementById('deskModal').classList.remove('hidden');
-            document.getElementById('roomModal').classList.add('hidden');
+            document.getElementById('modalContent').innerHTML = `
+                <h3 class="text-lg font-bold text-[#005596] mb-1">${id}</h3>
+                <p class="text-xs text-gray-500 mb-4">Wähle deinen Zeitraum für heute:</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="border-2 border-[#005596] p-2 rounded text-center text-[10px] font-bold">TAG</div>
+                    <div class="border p-2 rounded text-center text-[10px] text-gray-400">VORM.</div>
+                    <div class="border p-2 rounded text-center text-[10px] text-gray-400">NACHM.</div>
+                </div>
+            `;
+            document.getElementById('mainBtn').innerText = "Arbeitsplatz reservieren";
+            document.getElementById('modal').classList.remove('hidden');
         }
 
         function openRoom(name, cap, items) {
-            document.getElementById('roomTitle').innerText = name;
-            document.getElementById('roomCap').innerText = "Maximale Belegung: " + cap;
-            const list = document.getElementById('roomList');
-            list.innerHTML = '<p class="text-[10px] font-bold uppercase text-gray-400">Ausstattung:</p>';
-            items.forEach(i => {
-                list.innerHTML += `<div class="flex items-center gap-2 text-sm text-gray-600"><i data-lucide="check" class="w-4 h-4 text-green-500"></i> ${i}</div>`;
-            });
-            document.getElementById('modalOverlay').classList.remove('hidden');
-            document.getElementById('roomModal').classList.remove('hidden');
-            document.getElementById('deskModal').classList.add('hidden');
+            let listHtml = items.map(i => `<li class="flex items-center gap-2 text-xs text-gray-600"><i data-lucide="check" class="w-3 h-3 text-green-500"></i>${i}</li>`).join('');
+            document.getElementById('modalContent').innerHTML = `
+                <h3 class="text-lg font-bold text-[#005596] mb-1">${name}</h3>
+                <p class="text-[10px] font-bold text-gray-400 mb-4 uppercase">Kapazität: ${cap}</p>
+                <ul class="space-y-2">${listHtml}</ul>
+            `;
+            document.getElementById('mainBtn').innerText = "Meetingraum buchen";
+            document.getElementById('modal').classList.remove('hidden');
             lucide.createIcons();
         }
 
         function closeModal() {
-            document.getElementById('modalOverlay').classList.add('hidden');
+            document.getElementById('modal').classList.add('hidden');
         }
     </script>
 </body>
