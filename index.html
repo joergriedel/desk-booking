@@ -3,67 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERGO Desk Booking</title>
+    <title>ERGO Arbeitsplatzbuchung</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root { --ergo-blue: #005596; }
         
-        /* Vollständiger Verzicht auf Höhenbeschränkungen */
-        html, body {
+        body {
             margin: 0;
             padding: 0;
             height: auto !important;
             overflow: visible !important;
             background-color: #ffffff;
+            -webkit-font-smoothing: antialiased;
         }
 
         .tab-btn {
-            transition: all 0.2s;
             border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
         }
 
         .tab-active { 
             border-bottom: 3px solid var(--ergo-blue); 
-            color: var(--ergo-blue);
+            color: var(--ergo-blue) !important;
             font-weight: 800;
         }
 
-        /* Modal-Ersatz: Ein "Inline-Panel", das oben erscheint, statt eines schwebenden Fensters */
         #booking-panel {
             display: none;
-            background: #f1f5f9;
-            border-left: 4px solid var(--ergo-blue);
-            margin-bottom: 20px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 4px solid var(--ergo-blue);
+            animation: slideDown 0.3s ease-out;
         }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .desk-card:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
 
-<div class="w-full max-w-4xl mx-auto">
-    <div class="bg-[#005596] text-white p-4 flex justify-between items-center">
+<div class="w-full">
+    <div class="bg-[#005596] text-white p-4 flex justify-between items-center shadow-sm">
         <div class="flex items-center gap-3">
-            <div class="bg-white text-[#005596] w-7 h-7 rounded flex items-center justify-center font-bold">E</div>
-            <span class="text-xs font-bold uppercase tracking-widest">Smart Office Düsseldorf</span>
+            <div class="bg-white text-[#005596] w-7 h-7 rounded flex items-center justify-center font-bold shadow-sm">E</div>
+            <div>
+                <span class="block text-xs font-bold uppercase tracking-widest leading-none">Smart Office</span>
+                <span class="text-[9px] opacity-70 uppercase">Düsseldorf HQ</span>
+            </div>
         </div>
-        <i data-lucide="info" class="w-4 h-4 opacity-50"></i>
+        <div class="flex gap-3">
+            <i data-lucide="bell" class="w-4 h-4 opacity-70"></i>
+            <i data-lucide="settings" class="w-4 h-4 opacity-70"></i>
+        </div>
     </div>
 
-    <div class="flex border-b bg-white sticky top-0 z-10">
-        <button onclick="switchTab('eg')" id="tab-eg" class="tab-btn flex-1 py-4 text-[11px] font-bold uppercase text-gray-400 tab-active">Erdgeschoss</button>
-        <button onclick="switchTab('og1')" id="tab-og1" class="tab-btn flex-1 py-4 text-[11px] font-bold uppercase text-gray-400">1. OG</button>
-        <button onclick="switchTab('og2')" id="tab-og2" class="tab-btn flex-1 py-4 text-[11px] font-bold uppercase text-gray-400">2. OG</button>
+    <div class="flex border-b bg-white sticky top-0 z-10 shadow-sm">
+        <button onclick="switchTab('eg')" id="tab-eg" class="tab-btn flex-1 py-4 text-[10px] font-bold uppercase text-gray-400">Erdgeschoss</button>
+        <button onclick="switchTab('og1')" id="tab-og1" class="tab-btn flex-1 py-4 text-[10px] font-bold uppercase text-gray-400">1. OG</button>
+        <button onclick="switchTab('og2')" id="tab-og2" class="tab-btn flex-1 py-4 text-[10px] font-bold uppercase text-gray-400">2. OG</button>
     </div>
 
-    <div id="booking-panel" class="p-6">
-        <div class="flex justify-between items-start mb-4">
-            <h3 id="panel-title" class="text-lg font-bold text-[#005596]">Auswahl</h3>
-            <button onclick="closePanel()" class="text-gray-400 hover:text-red-500"><i data-lucide="x"></i></button>
+    <div id="booking-panel" class="p-5 shadow-inner">
+        <div class="flex justify-between items-center mb-4">
+            <h3 id="panel-title" class="text-base font-bold text-[#005596]">Auswahl</h3>
+            <button onclick="closePanel()" class="p-1 rounded-full bg-gray-200 text-gray-600"><i data-lucide="x" class="w-4 h-4"></i></button>
         </div>
-        <div id="panel-content"></div>
-        <div class="mt-6 flex gap-2">
-            <button class="flex-1 bg-[#005596] text-white py-3 rounded-lg font-bold text-sm">Jetzt buchen</button>
-            <button onclick="closePanel()" class="px-6 py-3 border border-gray-300 rounded-lg text-sm">Abbrechen</button>
+        <div id="panel-content" class="mb-6 text-sm text-gray-700"></div>
+        <div class="flex gap-2">
+            <button class="flex-1 bg-[#005596] text-white py-3 rounded-xl font-bold text-sm shadow-md active:bg-blue-800">Bestätigen</button>
+            <button onclick="closePanel()" class="flex-1 bg-white border border-gray-300 py-3 rounded-xl font-bold text-sm text-gray-500">Abbrechen</button>
         </div>
     </div>
 
@@ -72,58 +85,71 @@
 </div>
 
 <script>
-    const dataStore = {
+    const officeData = {
         eg: {
-            rooms: [{ name: "Konferenzraum Rhein", cap: "12 Pers.", equip: ["Beamer", "Webcam", "Whiteboard"] }],
-            desks: [{ id: "Desk-001", s: 2 }, { id: "Desk-002", s: 1 }, { id: "Desk-003", s: 2 }, { id: "Desk-004", s: 1 }]
+            rooms: [{ name: "Konferenzraum Rhein", cap: "12 Personen", equip: ["Beamer", "Whiteboard", "Hybrid-System"] }],
+            desks: [{ id: "Desk 001", s: 2 }, { id: "Desk 002", s: 1 }, { id: "Desk 003", s: 2 }, { id: "Desk 004", s: 2 }]
         },
         og1: {
-            rooms: [{ name: "Meeting Düssel", cap: "6 Pers.", equip: ["TV", "Webcam"] }],
-            desks: [{ id: "Desk-101", s: 2 }, { id: "Desk-102", s: 2 }]
+            rooms: [{ name: "Meeting Düssel", cap: "6 Personen", equip: ["Monitor 55\"", "Webcam"] }],
+            desks: [{ id: "Desk 101", s: 2 }, { id: "Desk 102", s: 1 }, { id: "Desk 103", s: 1 }]
         },
         og2: {
-            rooms: [{ name: "Panorama Lounge", cap: "15 Pers.", equip: ["Voll-Ausstattung"] }],
-            desks: [{ id: "Desk-201", s: 2 }]
+            rooms: [{ name: "Skyline Lounge", cap: "20 Personen", equip: ["Premium Ausstattung", "Dachterrasse"] }],
+            desks: [{ id: "Desk 201", s: 2 }, { id: "Desk 202", s: 2 }]
         }
     };
 
     function switchTab(floor) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active', 'text-[#005596]'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
         document.getElementById('tab-' + floor).classList.add('tab-active');
         closePanel();
 
         const content = document.getElementById('main-content');
-        const floorData = dataStore[floor];
+        const data = officeData[floor];
 
         content.innerHTML = `
-            <div>
-                <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Meeting Räume</h2>
+            <div class="animate-in fade-in duration-500">
+                <div class="flex justify-between items-center mb-4 px-1">
+                    <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Meeting-Räume</h2>
+                    <span class="text-[9px] text-gray-400 font-bold uppercase">${data.rooms.length} Verfügbar</span>
+                </div>
                 <div class="grid gap-3">
-                    ${floorData.rooms.map(r => `
-                        <div onclick="selectRoom('${r.name}', '${r.equip.join(', ')}')" class="bg-white border-2 border-gray-100 rounded-xl p-4 flex justify-between items-center cursor-pointer hover:border-[#005596]">
+                    ${data.rooms.map(r => `
+                        <div onclick="selectRoom('${r.name}', '${r.equip.join(', ')}')" class="bg-white border border-gray-100 rounded-2xl p-4 flex justify-between items-center shadow-sm cursor-pointer hover:border-[#005596] desk-card">
                             <div class="flex items-center gap-3">
-                                <div class="bg-blue-50 p-2 rounded-lg text-[#005596]"><i data-lucide="video"></i></div>
-                                <span class="font-bold text-gray-800">${r.name}</span>
+                                <div class="bg-blue-50 p-2 rounded-xl text-[#005596]"><i data-lucide="video" class="w-5 h-5"></i></div>
+                                <div>
+                                    <span class="block font-bold text-gray-800 text-sm">${r.name}</span>
+                                    <span class="text-[10px] text-gray-400">${r.cap}</span>
+                                </div>
                             </div>
-                            <span class="text-[9px] font-black text-green-600 bg-green-50 px-2 py-1 rounded">FREI</span>
+                            <span class="text-[9px] font-black text-green-600 bg-green-50 px-2 py-1 rounded-md text-center">FREI</span>
                         </div>
                     `).join('')}
                 </div>
             </div>
 
-            <div>
-                <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Schreibtische</h2>
+            <div class="animate-in fade-in duration-500">
+                <div class="flex justify-between items-center mb-4 px-1">
+                    <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Desks</h2>
+                    <div class="flex gap-3">
+                        <span class="flex items-center gap-1 text-[9px] font-bold text-gray-400"><span class="w-2 h-2 bg-green-500 rounded-full"></span> Frei</span>
+                        <span class="flex items-center gap-1 text-[9px] font-bold text-gray-400"><span class="w-2 h-2 bg-red-400 rounded-full"></span> Belegt</span>
+                    </div>
+                </div>
                 <div class="grid grid-cols-2 gap-3">
-                    ${floorData.desks.map(d => `
-                        <div onclick="selectDesk('${d.id}', ${d.s})" class="bg-white border-2 border-gray-100 rounded-xl p-4 cursor-pointer hover:border-[#005596]">
+                    ${data.desks.map(d => `
+                        <div onclick="selectDesk('${d.id}', ${d.s})" class="bg-white border border-gray-100 rounded-2xl p-4 cursor-pointer hover:border-[#005596] shadow-sm desk-card">
                             <div class="flex justify-between items-center mb-3">
-                                <span class="text-sm font-bold text-gray-800">${d.id}</span>
+                                <span class="text-xs font-bold text-gray-800">${d.id}</span>
                                 <div class="w-2 h-2 bg-green-500 rounded-full"></div>
                             </div>
-                            <div class="flex gap-1 mb-1">
+                            <div class="flex gap-1.5 mb-1 items-center">
                                 ${Array(d.s).fill('<i data-lucide="monitor" class="w-4 h-4 text-[#005596]"></i>').join('')}
+                                <span class="text-[9px] font-black text-[#005596] ml-1">${d.s}x</span>
                             </div>
-                            <p class="text-[9px] text-gray-400 uppercase font-bold">${d.s} Monitor(e)</p>
+                            <p class="text-[8px] text-gray-400 uppercase font-black tracking-tighter">Bildschirm(e)</p>
                         </div>
                     `).join('')}
                 </div>
@@ -135,22 +161,24 @@
     function selectRoom(name, equip) {
         document.getElementById('panel-title').innerText = name;
         document.getElementById('panel-content').innerHTML = `
-            <p class="text-xs text-gray-500 mb-4 uppercase font-bold">Ausstattung:</p>
-            <div class="grid grid-cols-1 gap-2">
-                ${equip.split(', ').map(e => `<div class="flex items-center gap-2 text-sm text-gray-700"><i data-lucide="check" class="w-4 h-4 text-green-500"></i> ${e}</div>`).join('')}
+            <div class="space-y-3">
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ausstattung:</p>
+                <div class="grid grid-cols-1 gap-2">
+                    ${equip.split(', ').map(e => `<div class="flex items-center gap-2 text-sm text-gray-600 font-medium"><i data-lucide="check-circle-2" class="w-4 h-4 text-green-500"></i> ${e}</div>`).join('')}
+                </div>
             </div>
         `;
         showPanel();
     }
 
-    function selectDesk(id, screens) {
-        document.getElementById('panel-title').innerText = "Arbeitsplatz " + id;
+    function selectDesk(id, s) {
+        document.getElementById('panel-title').innerText = id;
         document.getElementById('panel-content').innerHTML = `
-            <p class="text-sm text-gray-600 mb-4 italic">Ausgestattet mit ${screens} Monitoren.</p>
+            <p class="mb-4 text-gray-600">Möchten Sie diesen <strong>Desk</strong> mit <strong>${s} Monitor(en)</strong> reservieren? Wählen Sie einen Zeitraum:</p>
             <div class="flex gap-2">
-                <button class="flex-1 border-2 border-[#005596] p-2 rounded font-bold text-[10px] text-[#005596]">GANZTAG</button>
-                <button class="flex-1 border border-gray-300 p-2 rounded font-bold text-[10px] text-gray-400">VORMITTAG</button>
-                <button class="flex-1 border border-gray-300 p-2 rounded font-bold text-[10px] text-gray-400">NACHMITTAG</button>
+                <button class="flex-1 border-2 border-[#005596] p-2 rounded-xl text-[9px] font-black text-[#005596] hover:bg-blue-50">GANZTAG</button>
+                <button class="flex-1 border border-gray-200 p-2 rounded-xl text-[9px] font-bold text-gray-400 hover:bg-gray-50">VORMITTAG</button>
+                <button class="flex-1 border border-gray-200 p-2 rounded-xl text-[9px] font-bold text-gray-400 hover:bg-gray-50">NACHMITTAG</button>
             </div>
         `;
         showPanel();
@@ -167,7 +195,7 @@
         document.getElementById('booking-panel').style.display = 'none';
     }
 
-    // Initialisierung
+    // Start
     switchTab('eg');
 </script>
 </body>
