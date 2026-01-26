@@ -3,175 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERGO Smart Office</title>
+    <title>ERGO Desk Booking</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root { --ergo-blue: #005596; }
         
-        /* Kein h-screen oder 100%. Wir lassen das Widget natürlich wachsen. */
-        body {
+        /* Vollständiger Verzicht auf Höhenbeschränkungen */
+        html, body {
             margin: 0;
             padding: 0;
+            height: auto !important;
+            overflow: visible !important;
             background-color: #ffffff;
-            font-family: sans-serif;
+        }
+
+        .tab-btn {
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
         }
 
         .tab-active { 
-            background-color: #f1f5f9;
             border-bottom: 3px solid var(--ergo-blue); 
-            color: var(--ergo-blue); 
+            color: var(--ergo-blue);
+            font-weight: 800;
         }
 
-        /* Modal Fix: Nutzt absolute statt fixed, damit es innerhalb des Widgets bleibt */
-        .modal-overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            padding: 10px;
+        /* Modal-Ersatz: Ein "Inline-Panel", das oben erscheint, statt eines schwebenden Fensters */
+        #booking-panel {
+            display: none;
+            background: #f1f5f9;
+            border-left: 4px solid var(--ergo-blue);
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
 
-<div class="w-full">
-    <header class="bg-[#005596] text-white p-4 shadow-md">
-        <div class="flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="bg-white text-[#005596] w-8 h-8 rounded flex items-center justify-center font-bold">E</div>
-                <div>
-                    <h1 class="text-sm font-bold uppercase tracking-tight leading-none">Smart Office</h1>
-                    <p class="text-[10px] opacity-70">DÜSSELDORF VICTORIA-PLATZ</p>
-                </div>
-            </div>
-            <div class="flex gap-4">
-                <i data-lucide="bell" class="w-5 h-5"></i>
-                <i data-lucide="user" class="w-5 h-5"></i>
-            </div>
+<div class="w-full max-w-4xl mx-auto">
+    <div class="bg-[#005596] text-white p-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="bg-white text-[#005596] w-7 h-7 rounded flex items-center justify-center font-bold">E</div>
+            <span class="text-xs font-bold uppercase tracking-widest">Smart Office Düsseldorf</span>
         </div>
-    </header>
-
-    <nav class="bg-white border-b flex justify-start p-2 gap-2 overflow-x-auto">
-        <button onclick="switchTab('eg')" id="tab-eg" class="px-4 py-2 text-xs font-bold rounded-md tab-active">Erdgeschoss</button>
-        <button onclick="switchTab('og1')" id="tab-og1" class="px-4 py-2 text-xs font-bold text-gray-400">1. OG</button>
-        <button onclick="switchTab('og2')" id="tab-og2" class="px-4 py-2 text-xs font-bold text-gray-400">2. OG</button>
-    </nav>
-
-    <div class="flex justify-end gap-4 px-4 py-2 bg-gray-50 text-[10px] font-bold">
-        <span class="flex items-center gap-1"><span class="w-2 h-2 bg-green-500 rounded-full"></span> FREI</span>
-        <span class="flex items-center gap-1"><span class="w-2 h-2 bg-red-500 rounded-full"></span> BELEGT</span>
+        <i data-lucide="info" class="w-4 h-4 opacity-50"></i>
     </div>
 
-    <div id="content-target" class="p-4 space-y-6">
-        </div>
-</div>
-
-<div id="modal" class="hidden modal-overlay">
-    <div class="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 relative">
-        <div id="modal-body"></div>
-        <button onclick="closeModal()" class="w-full mt-6 py-3 bg-gray-100 text-gray-600 font-bold text-xs rounded-lg uppercase tracking-widest">Schließen</button>
+    <div class="flex border-b bg-white sticky top-0 z-10">
+        <button onclick="switchTab('eg')" id="tab-eg" class="tab-btn flex-1 py-4 text-[11px] font-bold uppercase text-gray-400 tab-active">Erdgeschoss</button>
+        <button onclick="switchTab('og1')" id="tab-og1" class="tab-btn flex-1 py-4 text-[11px] font-bold uppercase text-gray-400">1. OG</button>
+        <button onclick="switchTab('og2')" id="tab-og2" class="tab-btn flex-1 py-4 text-[11px] font-bold uppercase text-gray-400">2. OG</button>
     </div>
+
+    <div id="booking-panel" class="p-6">
+        <div class="flex justify-between items-start mb-4">
+            <h3 id="panel-title" class="text-lg font-bold text-[#005596]">Auswahl</h3>
+            <button onclick="closePanel()" class="text-gray-400 hover:text-red-500"><i data-lucide="x"></i></button>
+        </div>
+        <div id="panel-content"></div>
+        <div class="mt-6 flex gap-2">
+            <button class="flex-1 bg-[#005596] text-white py-3 rounded-lg font-bold text-sm">Jetzt buchen</button>
+            <button onclick="closePanel()" class="px-6 py-3 border border-gray-300 rounded-lg text-sm">Abbrechen</button>
+        </div>
+    </div>
+
+    <div id="main-content" class="p-4 space-y-8">
+        </div>
 </div>
 
 <script>
-    const db = {
+    const dataStore = {
         eg: {
-            rooms: [{ name: "Konferenzraum Rhein", cap: "12 Pers.", equip: ["Beamer", "Whiteboard", "TV"] }],
-            desks: [{ id: "D-001", screens: 2 }, { id: "D-002", screens: 1 }, { id: "D-003", screens: 2 }, { id: "D-004", screens: 1 }]
+            rooms: [{ name: "Konferenzraum Rhein", cap: "12 Pers.", equip: ["Beamer", "Webcam", "Whiteboard"] }],
+            desks: [{ id: "D-001", s: 2 }, { id: "D-002", s: 1 }, { id: "D-003", s: 2 }, { id: "D-004", s: 1 }]
         },
         og1: {
-            rooms: [{ name: "Meeting Düssel", cap: "6 Pers.", equip: ["Webcam", "TV"] }],
-            desks: [{ id: "D-101", screens: 2 }, { id: "D-102", screens: 1 }]
+            rooms: [{ name: "Meeting Düssel", cap: "6 Pers.", equip: ["TV", "Webcam"] }],
+            desks: [{ id: "D-101", s: 2 }, { id: "D-102", s: 2 }]
         },
         og2: {
-            rooms: [{ name: "Executive Suite", cap: "8 Pers.", equip: ["Premium Video"] }],
-            desks: [{ id: "D-201", screens: 2 }]
+            rooms: [{ name: "Panorama Lounge", cap: "15 Pers.", equip: ["Voll-Ausstattung"] }],
+            desks: [{ id: "D-201", s: 2 }]
         }
     };
 
     function switchTab(floor) {
-        // Tab UI
-        document.querySelectorAll('nav button').forEach(btn => {
-            btn.classList.remove('tab-active');
-            btn.classList.add('text-gray-400');
-        });
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active', 'text-[#005596]'));
         document.getElementById('tab-' + floor).classList.add('tab-active');
-        document.getElementById('tab-' + floor).classList.remove('text-gray-400');
+        closePanel();
 
-        const target = document.getElementById('content-target');
-        const data = db[floor];
-        
-        target.innerHTML = `
-            <section>
-                <h2 class="text-[10px] font-black text-gray-400 uppercase mb-3">Meeting Räume</h2>
+        const content = document.getElementById('main-content');
+        const floorData = dataStore[floor];
+
+        content.innerHTML = `
+            <div>
+                <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Meeting Räume</h2>
                 <div class="grid gap-3">
-                    ${data.rooms.map(r => `
-                        <div onclick="openRoom('${r.name}', '${r.equip.join(', ')}')" class="bg-white border rounded-xl p-4 flex justify-between items-center shadow-sm cursor-pointer">
+                    ${floorData.rooms.map(r => `
+                        <div onclick="selectRoom('${r.name}', '${r.equip.join(', ')}')" class="bg-white border-2 border-gray-100 rounded-xl p-4 flex justify-between items-center cursor-pointer hover:border-[#005596]">
                             <div class="flex items-center gap-3">
-                                <div class="bg-blue-50 p-2 rounded-lg text-[#005596]"><i data-lucide="users" class="w-5 h-5"></i></div>
-                                <span class="text-sm font-bold text-gray-800">${r.name}</span>
+                                <div class="bg-blue-50 p-2 rounded-lg text-[#005596]"><i data-lucide="video"></i></div>
+                                <span class="font-bold text-gray-800">${r.name}</span>
                             </div>
-                            <span class="text-[9px] bg-green-100 text-green-700 px-2 py-1 rounded font-bold uppercase">Frei</span>
+                            <span class="text-[9px] font-black text-green-600 bg-green-50 px-2 py-1 rounded">FREI</span>
                         </div>
                     `).join('')}
                 </div>
-            </section>
+            </div>
 
-            <section>
-                <h2 class="text-[10px] font-black text-gray-400 uppercase mb-3">Arbeitsplätze</h2>
+            <div>
+                <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Schreibtische</h2>
                 <div class="grid grid-cols-2 gap-3">
-                    ${data.desks.map(d => `
-                        <div onclick="openDesk('${d.id}', ${d.screens})" class="bg-white border rounded-xl p-4 shadow-sm cursor-pointer">
-                            <div class="flex justify-between items-center mb-2">
+                    ${floorData.desks.map(d => `
+                        <div onclick="selectDesk('${d.id}', ${d.s})" class="bg-white border-2 border-gray-100 rounded-xl p-4 cursor-pointer hover:border-[#005596]">
+                            <div class="flex justify-between items-center mb-3">
                                 <span class="text-sm font-bold text-gray-800">${d.id}</span>
-                                <span class="w-2.5 h-2.5 bg-green-500 rounded-full"></span>
+                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
                             </div>
                             <div class="flex gap-1 mb-1">
-                                ${Array(d.screens).fill('<i data-lucide="monitor" class="w-4 h-4 text-[#005596]"></i>').join('')}
+                                ${Array(d.s).fill('<i data-lucide="monitor" class="w-4 h-4 text-[#005596]"></i>').join('')}
                             </div>
-                            <p class="text-[9px] text-gray-400">${d.screens} Monitor(e)</p>
+                            <p class="text-[9px] text-gray-400 uppercase font-bold">${d.s} Monitor(e)</p>
                         </div>
                     `).join('')}
                 </div>
-            </section>
+            </div>
         `;
         lucide.createIcons();
     }
 
-    function openRoom(name, equip) {
-        document.getElementById('modal-body').innerHTML = `
-            <h3 class="text-xl font-bold text-[#005596] mb-2">${name}</h3>
-            <p class="text-[10px] font-bold text-gray-400 uppercase mb-3">Ausstattung</p>
-            <div class="space-y-2">
-                ${equip.split(', ').map(e => `<div class="flex items-center gap-2 text-sm text-gray-600"><i data-lucide="check" class="w-4 h-4 text-green-500"></i> ${e}</div>`).join('')}
+    function selectRoom(name, equip) {
+        document.getElementById('panel-title').innerText = name;
+        document.getElementById('panel-content').innerHTML = `
+            <p class="text-xs text-gray-500 mb-4 uppercase font-bold">Ausstattung:</p>
+            <div class="grid grid-cols-1 gap-2">
+                ${equip.split(', ').map(e => `<div class="flex items-center gap-2 text-sm text-gray-700"><i data-lucide="check" class="w-4 h-4 text-green-500"></i> ${e}</div>`).join('')}
             </div>
-            <button class="w-full bg-[#005596] text-white py-3 rounded-xl font-bold mt-6 shadow-md">Raum buchen</button>
         `;
-        document.getElementById('modal').classList.remove('hidden');
+        showPanel();
+    }
+
+    function selectDesk(id, screens) {
+        document.getElementById('panel-title').innerText = "Arbeitsplatz " + id;
+        document.getElementById('panel-content').innerHTML = `
+            <p class="text-sm text-gray-600 mb-4 italic">Ausgestattet mit ${screens} Monitoren.</p>
+            <div class="flex gap-2">
+                <button class="flex-1 border-2 border-[#005596] p-2 rounded font-bold text-[10px] text-[#005596]">GANZTAG</button>
+                <button class="flex-1 border border-gray-300 p-2 rounded font-bold text-[10px] text-gray-400">VORMITTAG</button>
+                <button class="flex-1 border border-gray-300 p-2 rounded font-bold text-[10px] text-gray-400">NACHMITTAG</button>
+            </div>
+        `;
+        showPanel();
+    }
+
+    function showPanel() {
+        const p = document.getElementById('booking-panel');
+        p.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         lucide.createIcons();
     }
 
-    function openDesk(id, s) {
-        document.getElementById('modal-body').innerHTML = `
-            <h3 class="text-xl font-bold text-[#005596] mb-1">${id}</h3>
-            <p class="text-xs text-gray-400 mb-6 italic">Arbeitsplatz mit ${s} Monitor(en)</p>
-            <div class="grid grid-cols-3 gap-2 mb-6">
-                <div class="border-2 border-[#005596] p-2 rounded-lg text-[10px] font-black text-[#005596] text-center">TAG</div>
-                <div class="border border-gray-200 p-2 rounded-lg text-[10px] text-gray-300 text-center">AM</div>
-                <div class="border border-gray-200 p-2 rounded-lg text-[10px] text-gray-300 text-center">PM</div>
-            </div>
-            <button class="w-full bg-[#005596] text-white py-3 rounded-xl font-bold shadow-md">Platz reservieren</button>
-        `;
-        document.getElementById('modal').classList.remove('hidden');
+    function closePanel() {
+        document.getElementById('booking-panel').style.display = 'none';
     }
 
-    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-
-    // Start
+    // Initialisierung
     switchTab('eg');
 </script>
 </body>
