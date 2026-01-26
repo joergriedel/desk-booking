@@ -2,193 +2,174 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERGO Smart Office - Düsseldorf</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ERGO Smart Office</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root { --ergo-blue: #005596; --ergo-red: #C3002F; }
-        .tab-active { border-bottom: 3px solid var(--ergo-blue); color: var(--ergo-blue); }
-        .hidden { display: none; }
-        body { background-color: #f8fafc; }
+        :root { --ergo-blue: #005596; }
+        
+        /* FIX: Kein h-screen/100vh, sondern dynamisches Flex-Layout */
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Verhindert das Scrollen des gesamten Bodys */
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%; /* Nutzt nur den verfügbaren Platz im Widget/Browser */
+            background-color: #f8fafc;
+        }
+
+        .scroll-area {
+            flex: 1; /* Nimmt den restlichen Platz ein */
+            overflow-y: auto; /* Nur dieser Bereich scrollt */
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab-active { 
+            border-bottom: 3px solid var(--ergo-blue); 
+            color: var(--ergo-blue); 
+        }
     </style>
 </head>
-<body class="flex flex-col h-screen overflow-hidden">
+<body>
 
-    <header class="bg-[#005596] text-white p-4 shrink-0 shadow-md">
-        <div class="flex justify-between items-center max-w-4xl mx-auto">
-            <div class="flex items-center gap-3">
-                <div class="bg-white text-[#005596] w-7 h-7 rounded flex items-center justify-center font-bold">E</div>
-                <div>
-                    <h1 class="text-sm font-bold leading-none">Smart Office</h1>
-                    <p class="text-[9px] opacity-70">DÜSSELDORF VICTORIA-PLATZ</p>
-                </div>
+<div class="app-container">
+    <header class="bg-[#005596] text-white p-3 shrink-0 shadow-md">
+        <div class="flex justify-between items-center max-w-2xl mx-auto">
+            <div class="flex items-center gap-2">
+                <div class="bg-white text-[#005596] w-6 h-6 rounded flex items-center justify-center font-bold text-xs">E</div>
+                <h1 class="text-xs font-bold uppercase tracking-tight">Victoria-Platz Düsseldorf</h1>
             </div>
-            <div class="flex gap-4">
-                <i data-lucide="search" class="w-5 h-5 opacity-80 cursor-pointer"></i>
-                <i data-lucide="user" class="w-5 h-5 cursor-pointer"></i>
+            <div class="flex gap-3">
+                <i data-lucide="filter" class="w-4 h-4 opacity-70"></i>
+                <i data-lucide="user" class="w-4 h-4"></i>
             </div>
         </div>
     </header>
 
-    <nav class="bg-white border-b shrink-0 shadow-sm">
-        <div class="flex justify-around max-w-4xl mx-auto">
-            <button onclick="showFloor('eg')" id="tab-eg" class="floor-tab flex-1 py-3 text-xs font-bold tab-active">ERDGESCHOSS</button>
-            <button onclick="showFloor('og1')" id="tab-og1" class="floor-tab flex-1 py-3 text-xs font-bold text-gray-400">1. OG</button>
-            <button onclick="showFloor('og2')" id="tab-og2" class="floor-tab flex-1 py-3 text-xs font-bold text-gray-400">2. OG</button>
+    <nav class="bg-white border-b shrink-0">
+        <div class="flex max-w-2xl mx-auto">
+            <button onclick="switchTab('eg')" id="tab-eg" class="tab-btn flex-1 py-3 text-[10px] font-black tab-active uppercase">Erdgeschoss</button>
+            <button onclick="switchTab('og1')" id="tab-og1" class="tab-btn flex-1 py-3 text-[10px] font-black text-gray-400 uppercase">1. OG</button>
+            <button onclick="switchTab('og2')" id="tab-og2" class="tab-btn flex-1 py-3 text-[10px] font-black text-gray-400 uppercase">2. OG</button>
         </div>
     </nav>
 
-    <main class="flex-1 overflow-y-auto p-4 space-y-6 max-w-4xl mx-auto w-full">
-        
-        <div id="floor-content">
+    <div class="scroll-area p-4">
+        <div id="content-target" class="max-w-2xl mx-auto space-y-6">
             </div>
+    </div>
+</div>
 
-    </main>
-
-    <div id="modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300">
-            <div id="modalBody" class="p-6"></div>
-            <div class="p-4 bg-gray-50 flex flex-col gap-2">
-                <button onclick="closeModal()" class="w-full py-3 text-gray-400 font-bold text-xs tracking-widest uppercase">Schließen</button>
-            </div>
+<div id="modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-t-2xl sm:rounded-2xl shadow-2xl animate-in slide-in-from-bottom duration-200">
+        <div id="modal-body" class="p-6"></div>
+        <div class="p-4 border-t flex flex-col gap-2">
+            <button onclick="closeModal()" class="w-full py-2 text-gray-400 font-bold text-[10px] uppercase tracking-widest">Schließen</button>
         </div>
     </div>
+</div>
 
-    <script>
-        const officeData = {
-            eg: {
-                rooms: [
-                    { name: "Raum Rhein", cap: "12 Pers.", equip: ["Beamer", "Webcam", "Whiteboard"], status: "frei" }
-                ],
-                desks: [
-                    { id: "Desk 001", screens: 2, status: "frei" },
-                    { id: "Desk 002", screens: 1, status: "belegt" },
-                    { id: "Desk 003", screens: 2, status: "frei" },
-                    { id: "Desk 004", screens: 2, status: "frei" }
-                ]
-            },
-            og1: {
-                rooms: [
-                    { name: "Raum Düssel", cap: "4 Pers.", equip: ["Monitor", "Kaffeebar"], status: "belegt" },
-                    { name: "Focus Box A", cap: "1 Pers.", equip: ["Schallschutz"], status: "frei" }
-                ],
-                desks: [
-                    { id: "Desk 101", screens: 1, status: "frei" },
-                    { id: "Desk 102", screens: 2, status: "belegt" }
-                ]
-            },
-            og2: {
-                rooms: [
-                    { name: "Skyline Lounge", cap: "20 Pers.", equip: ["Voll-Ausstattung", "Balkon"], status: "frei" }
-                ],
-                desks: [
-                    { id: "Desk 201", screens: 2, status: "frei" },
-                    { id: "Desk 202", screens: 2, status: "frei" }
-                ]
-            }
-        };
+<script>
+    const db = {
+        eg: {
+            rooms: [{ name: "Konferenzraum Rhein", cap: "12 Pers.", equip: ["Beamer", "Whiteboard"] }],
+            desks: [{ id: "D-001", screens: 2 }, { id: "D-002", screens: 1 }, { id: "D-003", screens: 2 }]
+        },
+        og1: {
+            rooms: [{ name: "Meeting Düssel", cap: "6 Pers.", equip: ["TV", "Webcam"] }],
+            desks: [{ id: "D-101", screens: 1 }, { id: "D-102", screens: 1 }]
+        },
+        og2: {
+            rooms: [{ name: "Executive Suite", cap: "8 Pers.", equip: ["Premium Video"] }],
+            desks: [{ id: "D-201", screens: 2 }]
+        }
+    };
 
-        function showFloor(floorKey) {
-            // Update Tabs
-            document.querySelectorAll('.floor-tab').forEach(t => {
-                t.classList.remove('tab-active');
-                t.classList.add('text-gray-400');
-            });
-            document.getElementById('tab-' + floorKey).classList.add('tab-active');
-            document.getElementById('tab-' + floorKey).classList.remove('text-gray-400');
+    function switchTab(floor) {
+        // Tab UI Update
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('tab-active');
+            btn.classList.add('text-gray-400');
+        });
+        document.getElementById('tab-' + floor).classList.add('tab-active');
+        document.getElementById('tab-' + floor).classList.remove('text-gray-400');
 
-            const container = document.getElementById('floor-content');
-            const data = officeData[floorKey];
-
-            let html = `
-                <div class="mb-8">
-                    <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Meeting Räume</h3>
-                    <div class="grid gap-3">
-                        ${data.rooms.map(r => `
-                            <div onclick="openRoom('${r.name}', '${r.cap}', '${r.equip.join(', ')}')" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center cursor-pointer hover:border-[#005596]">
-                                <div class="flex items-center gap-3">
-                                    <div class="bg-blue-50 p-2 rounded-lg text-[#005596]"><i data-lucide="users"></i></div>
-                                    <div>
-                                        <p class="text-sm font-bold text-gray-800">${r.name}</p>
-                                        <p class="text-[10px] text-gray-500">${r.cap}</p>
-                                    </div>
-                                </div>
-                                <span class="text-[9px] font-bold px-2 py-1 rounded ${r.status === 'frei' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${r.status.toUpperCase()}</span>
+        // Content Update
+        const target = document.getElementById('content-target');
+        const data = db[floor];
+        
+        let html = `
+            <section>
+                <h2 class="text-[10px] font-black text-gray-400 uppercase mb-3 tracking-tighter">Meeting Räume</h2>
+                <div class="grid gap-2">
+                    ${data.rooms.map(r => `
+                        <div onclick="openRoom('${r.name}', '${r.equip.join(', ')}')" class="bg-white p-3 rounded-xl border border-gray-100 flex justify-between items-center shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-blue-50 p-2 rounded-lg text-[#005596]"><i data-lucide="users" class="w-4 h-4"></i></div>
+                                <span class="text-sm font-bold">${r.name}</span>
                             </div>
-                        `).join('')}
-                    </div>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+                        </div>
+                    `).join('')}
                 </div>
+            </section>
 
-                <div>
-                    <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Schreibtische</h3>
-                    <div class="grid grid-cols-2 gap-3">
-                        ${data.desks.map(d => `
-                            <div onclick="openDesk('${d.id}', ${d.screens})" class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-2 cursor-pointer hover:border-[#005596]">
-                                <div class="flex justify-between items-start">
-                                    <span class="text-xs font-bold text-gray-700">${d.id}</span>
-                                    <div class="w-2 h-2 rounded-full ${d.status === 'frei' ? 'bg-green-500' : 'bg-red-500'}"></div>
-                                </div>
-                                <div class="flex gap-1 text-[#005596]">
-                                    ${Array(d.screens).fill('<i data-lucide="monitor" class="w-4 h-4"></i>').join('')}
-                                </div>
-                                <p class="text-[9px] text-gray-400 font-medium">${d.screens} Monitor(e)</p>
+            <section>
+                <h2 class="text-[10px] font-black text-gray-400 uppercase mb-3 tracking-tighter">Schreibtische</h2>
+                <div class="grid grid-cols-2 gap-3">
+                    ${data.desks.map(d => `
+                        <div onclick="openDesk('${d.id}', ${d.screens})" class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold">${d.id}</span>
+                                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
                             </div>
-                        `).join('')}
-                    </div>
+                            <div class="flex gap-1">
+                                ${Array(d.screens).fill('<i data-lucide="monitor" class="w-4 h-4 text-[#005596]"></i>').join('')}
+                            </div>
+                            <span class="text-[9px] text-gray-400">${d.screens} Monitor(e)</span>
+                        </div>
+                    `).join('')}
                 </div>
-            `;
-            container.innerHTML = html;
-            lucide.createIcons();
-        }
+            </section>
+        `;
+        target.innerHTML = html;
+        lucide.createIcons();
+    }
 
-        function openRoom(name, cap, equip) {
-            const body = document.getElementById('modalBody');
-            body.innerHTML = `
-                <div class="flex justify-between items-start mb-6">
-                    <div>
-                        <h2 class="text-xl font-bold text-[#005596]">${name}</h2>
-                        <p class="text-sm text-gray-400 tracking-wide">${cap}</p>
-                    </div>
-                    <div class="bg-green-50 text-green-600 p-2 rounded-full"><i data-lucide="check-circle"></i></div>
-                </div>
-                <div class="space-y-4 mb-8">
-                    <p class="text-[10px] font-black text-gray-300 uppercase">Ausstattung</p>
-                    <div class="grid grid-cols-1 gap-2">
-                        ${equip.split(', ').map(e => `<div class="flex items-center gap-2 text-sm text-gray-600"><i data-lucide="dot" class="text-[#005596]"></i>${e}</div>`).join('')}
-                    </div>
-                </div>
-                <button class="w-full bg-[#005596] text-white py-4 rounded-xl font-bold shadow-lg">Meetingraum buchen</button>
-            `;
-            document.getElementById('modal').classList.remove('hidden');
-            lucide.createIcons();
-        }
+    function openRoom(name, equip) {
+        document.getElementById('modal-body').innerHTML = `
+            <h3 class="text-lg font-bold text-[#005596] mb-4">${name}</h3>
+            <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Ausstattung</p>
+            <p class="text-sm text-gray-600 mb-6">${equip}</p>
+            <button class="w-full bg-[#005596] text-white py-3 rounded-xl font-bold">Raum buchen</button>
+        `;
+        document.getElementById('modal').classList.remove('hidden');
+        lucide.createIcons();
+    }
 
-        function openDesk(id, screens) {
-            const body = document.getElementById('modalBody');
-            body.innerHTML = `
-                <h2 class="text-xl font-bold text-[#005596] mb-2">${id}</h2>
-                <div class="flex items-center gap-2 text-gray-500 mb-6">
-                    <i data-lucide="monitor" class="w-4 h-4"></i>
-                    <p class="text-xs">Arbeitsplatz mit ${screens} Monitor(en)</p>
-                </div>
-                <div class="grid grid-cols-3 gap-2 mb-8">
-                    <button class="border-2 border-[#005596] p-3 rounded-xl text-center"><p class="text-[10px] font-black text-[#005596]">TAG</p></button>
-                    <button class="border border-gray-200 p-3 rounded-xl text-center text-gray-400 font-bold text-[10px]">AM</button>
-                    <button class="border border-gray-200 p-3 rounded-xl text-center text-gray-400 font-bold text-[10px]">PM</button>
-                </div>
-                <button class="w-full bg-[#005596] text-white py-4 rounded-xl font-bold shadow-lg">Jetzt reservieren</button>
-            `;
-            document.getElementById('modal').classList.remove('hidden');
-            lucide.createIcons();
-        }
+    function openDesk(id, s) {
+        document.getElementById('modal-body').innerHTML = `
+            <h3 class="text-lg font-bold text-[#005596] mb-1">${id}</h3>
+            <p class="text-xs text-gray-400 mb-6 italic">Arbeitsplatz mit ${s} Monitor(en)</p>
+            <div class="grid grid-cols-3 gap-2 mb-6 text-center">
+                <div class="border-2 border-[#005596] p-2 rounded-lg text-[10px] font-bold text-[#005596]">TAG</div>
+                <div class="border border-gray-100 p-2 rounded-lg text-[10px] text-gray-300">AM</div>
+                <div class="border border-gray-100 p-2 rounded-lg text-[10px] text-gray-300">PM</div>
+            </div>
+            <button class="w-full bg-[#005596] text-white py-3 rounded-xl font-bold">Platz reservieren</button>
+        `;
+        document.getElementById('modal').classList.remove('hidden');
+    }
 
-        function closeModal() {
-            document.getElementById('modal').classList.add('hidden');
-        }
+    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
 
-        // Init
-        showFloor('eg');
-    </script>
+    // Start
+    switchTab('eg');
+</script>
 </body>
 </html>
