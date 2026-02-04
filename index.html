@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERGO Smart Office - HQ Düsseldorf</title>
+    <title>Smart Office - Headquarter</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root { --ergo-blue: #005596; }
+        :root { --header-color: #0a8276; }
         body { margin: 0; padding: 0; height: auto !important; overflow: visible !important; background-color: #ffffff; -webkit-font-smoothing: antialiased; font-family: sans-serif; }
         .tab-btn { border-bottom: 3px solid transparent; transition: all 0.2s ease; }
-        .tab-active { border-bottom: 3px solid var(--ergo-blue); color: var(--ergo-blue) !important; font-weight: 800; }
-        #booking-panel { display: none; background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 4px solid var(--ergo-blue); animation: slideDown 0.3s ease-out; }
+        .tab-active { border-bottom: 3px solid var(--header-color); color: var(--header-color) !important; font-weight: 800; }
+        #booking-panel { display: none; background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 4px solid var(--header-color); animation: slideDown 0.3s ease-out; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        .time-btn-active { border-color: var(--ergo-blue); color: var(--ergo-blue); background-color: #eff6ff; }
+        .time-btn-active { border-color: var(--header-color); color: var(--header-color); background-color: #eff6ff; }
         .desk-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
     </style>
 </head>
